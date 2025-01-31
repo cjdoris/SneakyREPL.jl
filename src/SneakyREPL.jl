@@ -10,11 +10,13 @@ Valid modes are:
 - "julia": Regular Julia REPL (default)
 - "python": Python-like REPL
 - "ipython": IPython-like REPL with input numbering
+- "r": R-like REPL
 
 # Examples
 ```julia
 enable("python")   # Enable Python mode
 enable("ipython")  # Enable IPython mode
+enable("r")       # Enable R mode
 enable("julia")    # Reset to original Julia mode
 enable()          # Use preferred mode from Preferences
 ```
@@ -41,6 +43,15 @@ Type '?' for help.
 
 In [1]: """
 
+const R_BANNER = """
+
+R version 4.3.0 (Julia $(VERSION))
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+"""
+
 # Counter for IPython input prompts
 const IPYTHON_COUNT = Ref(1)
 
@@ -50,6 +61,10 @@ end
 
 function ipython_banner(io::IO=stdout)
     print(io, IPYTHON_BANNER)
+end
+
+function r_banner(io::IO=stdout)
+    print(io, R_BANNER)
 end
 
 function save_or_restore_original_settings!(repl)
@@ -132,6 +147,23 @@ function enable_julia_repl(repl)
     end
 end
 
+function enable_r_repl(repl)
+    if !isdefined(repl, :interface)
+        interface = repl.interface = REPL.setup_interface(repl)
+    else
+        interface = repl.interface
+    end
+    save_or_restore_original_settings!(repl)  # Save if empty, restore if not
+
+    main_mode = interface.modes[1]
+    main_mode.prompt = "> "
+    main_mode.prompt_prefix = ""
+    main_mode.prompt_suffix = ""
+    main_mode.output_prefix = "[1] "
+    main_mode.output_prefix_prefix = ""
+    main_mode.output_prefix_suffix = ""
+end
+
 function apply_repl_config(config_fn::Function)
     # Handle both pre and post REPL initialization cases
     if isdefined(Base, :active_repl) && Base.active_repl !== nothing
@@ -169,6 +201,16 @@ function enable_julia()
     apply_repl_config(enable_julia_repl)
 end
 
+function enable_r()
+    # Override banner function in the correct module depending on Julia version
+    mod = isdefined(Base, :banner) ? Base : REPL
+    @eval function $mod.banner(io::IO=stdout; short::Bool=false)
+        $r_banner(io)
+    end
+
+    apply_repl_config(enable_r_repl)
+end
+
 function enable(mode::Union{String,Nothing}=nothing)
     if isnothing(mode)
         # Get preferred mode from Preferences, default to "julia"
@@ -179,10 +221,12 @@ function enable(mode::Union{String,Nothing}=nothing)
         enable_python()
     elseif mode == "ipython"
         enable_ipython()
+    elseif mode == "r"
+        enable_r()
     elseif mode == "julia"
         enable_julia()
     else
-        throw(ArgumentError("Invalid mode: $mode. Valid modes are \"julia\", \"python\", or \"ipython\"."))
+        throw(ArgumentError("Invalid mode: $mode. Valid modes are \"julia\", \"python\", \"ipython\", or \"r\"."))
     end
 end
 
