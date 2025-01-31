@@ -37,6 +37,7 @@ const ORIGINAL_SETTINGS = Dict{Symbol,Any}()
 const DEFAULT_PYTHON_VERSION = "3.9.0"
 const DEFAULT_IPYTHON_VERSION = "8.0.0"
 const DEFAULT_R_VERSION = "4.3.0"
+const DEFAULT_R_VERSION_NAME = "Beagle Scouts"
 
 const DEFAULT_PYTHON_BANNER = """
 Python {PYTHON_VERSION} (Julia {JULIA_VERSION}) on {MACHINE}
@@ -51,7 +52,20 @@ Type '?' for help.
 
 const DEFAULT_R_BANNER = """
 
-R version {R_VERSION} (Julia {JULIA_VERSION})
+R version {R_VERSION} (Julia {JULIA_VERSION}) -- "{R_VERSION_NAME}"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: {MACHINE} (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
 Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
@@ -69,6 +83,7 @@ function process_banner_template(template::String)
         "{PYTHON_VERSION}" => @load_preference("python_version", DEFAULT_PYTHON_VERSION),
         "{IPYTHON_VERSION}" => @load_preference("ipython_version", DEFAULT_IPYTHON_VERSION),
         "{R_VERSION}" => @load_preference("r_version", DEFAULT_R_VERSION),
+        "{R_VERSION_NAME}" => @load_preference("r_version_name", DEFAULT_R_VERSION_NAME),
     )
 end
 
