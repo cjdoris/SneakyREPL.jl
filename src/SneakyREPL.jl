@@ -1,5 +1,7 @@
 module SneakyREPL
 
+using Preferences: @load_preference, @set_preferences!
+
 """
     enable(mode=nothing)
 
@@ -32,18 +34,18 @@ import ..SneakyREPL: enable
 # Store original REPL settings
 const ORIGINAL_SETTINGS = Dict{Symbol,Any}()
 
-const PYTHON_BANNER = """
+const DEFAULT_PYTHON_BANNER = """
 Python 3.9.0 (Julia $(VERSION)) on $(Sys.MACHINE)
 Type "help", "copyright", "credits" or "license" for more information.
 """
 
-const IPYTHON_BANNER = """
+const DEFAULT_IPYTHON_BANNER = """
 IPython 8.0.0 (Julia $(VERSION))
 Type '?' for help.
 
 In [1]: """
 
-const R_BANNER = """
+const DEFAULT_R_BANNER = """
 
 R version 4.3.0 (Julia $(VERSION))
 Type 'demo()' for some demos, 'help()' for on-line help, or
@@ -56,15 +58,18 @@ Type 'q()' to quit R.
 const IPYTHON_COUNT = Ref(1)
 
 function python_banner(io::IO=stdout)
-    print(io, PYTHON_BANNER)
+    banner = @load_preference("python_banner", DEFAULT_PYTHON_BANNER)::String
+    print(io, banner)
 end
 
 function ipython_banner(io::IO=stdout)
-    print(io, IPYTHON_BANNER)
+    banner = @load_preference("ipython_banner", DEFAULT_IPYTHON_BANNER)::String
+    print(io, banner)
 end
 
 function r_banner(io::IO=stdout)
-    print(io, R_BANNER)
+    banner = @load_preference("r_banner", DEFAULT_R_BANNER)::String
+    print(io, banner)
 end
 
 function save_or_restore_original_settings!(repl)
