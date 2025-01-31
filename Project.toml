@@ -1,0 +1,8 @@
+name = "SneakyREPL"
+uuid = "49d06335-c04d-4077-a247-177bbe3f852c"
+authors = ["Christopher Doris <github.com/cjdoris>"]
+version = "0.1.0"
+
+[deps]
+REPL = "3fa0cd96-eef1-5676-8a61-b3b8758bbffb"
+Preferences = "21216c6a-2e73-6563-6e65-726566657250"
