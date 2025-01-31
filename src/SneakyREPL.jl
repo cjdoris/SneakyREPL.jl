@@ -40,7 +40,7 @@ const DEFAULT_R_VERSION = "4.3.0"
 const DEFAULT_R_VERSION_NAME = "Beagle Scouts"
 
 const DEFAULT_PYTHON_BANNER = """
-Python {PYTHON_VERSION} (Julia {JULIA_VERSION}) on {MACHINE}
+Python {PYTHON_VERSION} (Julia {JULIA_VERSION})
 Type "help", "copyright", "credits" or "license" for more information.
 """
 
