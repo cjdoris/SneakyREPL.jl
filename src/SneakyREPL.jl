@@ -34,20 +34,24 @@ import ..SneakyREPL: enable
 # Store original REPL settings
 const ORIGINAL_SETTINGS = Dict{Symbol,Any}()
 
+const DEFAULT_PYTHON_VERSION = "3.9.0"
+const DEFAULT_IPYTHON_VERSION = "8.0.0"
+const DEFAULT_R_VERSION = "4.3.0"
+
 const DEFAULT_PYTHON_BANNER = """
-Python 3.9.0 (Julia $(VERSION)) on $(Sys.MACHINE)
+Python {PYTHON_VERSION} (Julia {JULIA_VERSION}) on {MACHINE}
 Type "help", "copyright", "credits" or "license" for more information.
 """
 
 const DEFAULT_IPYTHON_BANNER = """
-IPython 8.0.0 (Julia $(VERSION))
+IPython {IPYTHON_VERSION} (Julia {JULIA_VERSION})
 Type '?' for help.
 
-In [1]: """
+"""
 
 const DEFAULT_R_BANNER = """
 
-R version 4.3.0 (Julia $(VERSION))
+R version {R_VERSION} (Julia {JULIA_VERSION})
 Type 'demo()' for some demos, 'help()' for on-line help, or
 'help.start()' for an HTML browser interface to help.
 Type 'q()' to quit R.
@@ -57,19 +61,30 @@ Type 'q()' to quit R.
 # Counter for IPython input prompts
 const IPYTHON_COUNT = Ref(1)
 
+# Function to process banner templates
+function process_banner_template(template::String)
+    return replace(template,
+        "{JULIA_VERSION}" => Base.VERSION,
+        "{MACHINE}" => Sys.MACHINE,
+        "{PYTHON_VERSION}" => @load_preference("python_version", DEFAULT_PYTHON_VERSION),
+        "{IPYTHON_VERSION}" => @load_preference("ipython_version", DEFAULT_IPYTHON_VERSION),
+        "{R_VERSION}" => @load_preference("r_version", DEFAULT_R_VERSION),
+    )
+end
+
 function python_banner(io::IO=stdout)
     banner = @load_preference("python_banner", DEFAULT_PYTHON_BANNER)::String
-    print(io, banner)
+    print(io, process_banner_template(banner))
 end
 
 function ipython_banner(io::IO=stdout)
     banner = @load_preference("ipython_banner", DEFAULT_IPYTHON_BANNER)::String
-    print(io, banner)
+    print(io, process_banner_template(banner))
 end
 
 function r_banner(io::IO=stdout)
     banner = @load_preference("r_banner", DEFAULT_R_BANNER)::String
-    print(io, banner)
+    print(io, process_banner_template(banner))
 end
 
 function save_or_restore_original_settings!(repl)
