@@ -45,8 +45,9 @@ Type "help", "copyright", "credits" or "license" for more information.
 """
 
 const DEFAULT_IPYTHON_BANNER = """
-IPython {IPYTHON_VERSION} (Julia {JULIA_VERSION})
-Type '?' for help.
+Python {PYTHON_VERSION} (Julia {JULIA_VERSION})
+Type "copyright", "credits" or "license" for more information.
+IPython {IPYTHON_VERSION} -- An enhanced Interactive Python. Type '?' for help.
 
 """
 
