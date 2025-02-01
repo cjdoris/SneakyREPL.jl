@@ -77,7 +77,7 @@ Type 'q()' to quit R.
 
 const DEFAULT_MOJO_VERSION = "24.6"
 const DEFAULT_MOJO_BANNER = """
-Welcome to Mojo! 🔥
+Welcome to Mojo! 🔥 (Julia {JULIA_VERSION})
 Expressions are delimited by a blank line.
 Type `:mojo help` for further assistance.
 """
