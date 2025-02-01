@@ -13,12 +13,14 @@ Valid modes are:
 - "python": Python-like REPL
 - "ipython": IPython-like REPL with input numbering
 - "r": R-like REPL
+- "mojo": Mojo-like REPL with input numbering
 
 # Examples
 ```julia
 enable("python")   # Enable Python mode
 enable("ipython")  # Enable IPython mode
 enable("r")       # Enable R mode
+enable("mojo")    # Enable Mojo mode
 enable("julia")    # Reset to original Julia mode
 enable()          # Use preferred mode from Preferences
 ```
@@ -73,8 +75,18 @@ Type 'q()' to quit R.
 
 """
 
+const DEFAULT_MOJO_VERSION = "24.6"
+const DEFAULT_MOJO_BANNER = """
+Welcome to Mojo! 🔥
+Expressions are delimited by a blank line.
+Type `:mojo help` for further assistance.
+"""
+
 # Counter for IPython input prompts
 const IPYTHON_COUNT = Ref(1)
+
+# Counter for Mojo input prompts
+const MOJO_COUNT = Ref(1)
 
 # Function to process banner templates
 function process_banner_template(template::String)
@@ -85,6 +97,7 @@ function process_banner_template(template::String)
         "{IPYTHON_VERSION}" => @load_preference("ipython_version", DEFAULT_IPYTHON_VERSION),
         "{R_VERSION}" => @load_preference("r_version", DEFAULT_R_VERSION),
         "{R_VERSION_NAME}" => @load_preference("r_version_name", DEFAULT_R_VERSION_NAME),
+        "{MOJO_VERSION}" => @load_preference("mojo_version", DEFAULT_MOJO_VERSION),
         "{WORD_SIZE}" => Sys.WORD_SIZE
     )
 end
@@ -101,6 +114,11 @@ end
 
 function r_banner(io::IO=stdout)
     banner = @load_preference("r_banner", DEFAULT_R_BANNER)::String
+    print(io, process_banner_template(banner))
+end
+
+function mojo_banner(io::IO=stdout)
+    banner = @load_preference("mojo_banner", DEFAULT_MOJO_BANNER)::String
     print(io, process_banner_template(banner))
 end
 
@@ -181,6 +199,7 @@ function enable_julia_repl(repl)
     if !isempty(ORIGINAL_SETTINGS) && isdefined(repl, :interface)
         save_or_restore_original_settings!(repl)  # Will restore since ORIGINAL_SETTINGS is not empty
         IPYTHON_COUNT[] = 1  # Reset IPython counter
+        MOJO_COUNT[] = 1  # Reset Mojo counter
     end
 end
 
@@ -199,6 +218,28 @@ function enable_r_repl(repl)
     main_mode.output_prefix = "[1] "
     main_mode.output_prefix_prefix = ""
     main_mode.output_prefix_suffix = ""
+end
+
+function enable_mojo_repl(repl)
+    if !isdefined(repl, :interface)
+        interface = repl.interface = REPL.setup_interface(repl)
+    else
+        interface = repl.interface
+    end
+    save_or_restore_original_settings!(repl)  # Save if empty, restore if not
+
+    main_mode = interface.modes[1]
+    main_mode.prompt = () -> "$(MOJO_COUNT[])> "
+    main_mode.prompt_prefix = ""
+    main_mode.prompt_suffix = ""
+
+    # Hook into on_done to increment counter after each input
+    old_on_done = ORIGINAL_SETTINGS[:on_done]  # Use saved original on_done
+    main_mode.on_done = (s, buf, ok) -> begin
+        result = old_on_done(s, buf, ok)
+        MOJO_COUNT[] += 1
+        return result
+    end
 end
 
 function apply_repl_config(config_fn::Function)
@@ -248,6 +289,16 @@ function enable_r()
     apply_repl_config(enable_r_repl)
 end
 
+function enable_mojo()
+    # Override banner function in the correct module depending on Julia version
+    mod = isdefined(Base, :banner) ? Base : REPL
+    @eval function $mod.banner(io::IO=stdout; short::Bool=false)
+        $mojo_banner(io)
+    end
+
+    apply_repl_config(enable_mojo_repl)
+end
+
 function enable(mode::Union{String,Nothing}=nothing)
     if isnothing(mode)
         # Get preferred mode from Preferences, default to "julia"
@@ -262,8 +313,10 @@ function enable(mode::Union{String,Nothing}=nothing)
         enable_r()
     elseif mode == "julia"
         enable_julia()
+    elseif mode == "mojo"
+        enable_mojo()
     else
-        throw(ArgumentError("Invalid mode: $mode. Valid modes are \"julia\", \"python\", \"ipython\", or \"r\"."))
+        throw(ArgumentError("Invalid mode: $mode. Valid modes are \"julia\", \"python\", \"ipython\", \"r\", or \"mojo\"."))
     end
 end
 
