@@ -34,9 +34,9 @@ import ..SneakyREPL: enable
 # Store original REPL settings
 const ORIGINAL_SETTINGS = Dict{Symbol,Any}()
 
-const DEFAULT_PYTHON_VERSION = "3.9.0"
-const DEFAULT_IPYTHON_VERSION = "8.0.0"
-const DEFAULT_R_VERSION = "4.3.0"
+const DEFAULT_PYTHON_VERSION = "3.13.1"
+const DEFAULT_IPYTHON_VERSION = "8.32.0"
+const DEFAULT_R_VERSION = "4.4.2"
 const DEFAULT_R_VERSION_NAME = "Beagle Scouts"
 
 const DEFAULT_PYTHON_BANNER = """
@@ -55,7 +55,7 @@ const DEFAULT_R_BANNER = """
 
 R version {R_VERSION} (Julia {JULIA_VERSION}) -- "{R_VERSION_NAME}"
 Copyright (C) 2023 The R Foundation for Statistical Computing
-Platform: {MACHINE} (64-bit)
+Platform: {MACHINE} ({WORD_SIZE}-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -85,6 +85,7 @@ function process_banner_template(template::String)
         "{IPYTHON_VERSION}" => @load_preference("ipython_version", DEFAULT_IPYTHON_VERSION),
         "{R_VERSION}" => @load_preference("r_version", DEFAULT_R_VERSION),
         "{R_VERSION_NAME}" => @load_preference("r_version_name", DEFAULT_R_VERSION_NAME),
+        "{WORD_SIZE}" => Sys.WORD_SIZE
     )
 end
 
