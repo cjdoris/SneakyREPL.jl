@@ -82,11 +82,18 @@ Expressions are delimited by a blank line.
 Type `:mojo help` for further assistance.
 """
 
-# Counter for IPython input prompts
-const IPYTHON_COUNT = Ref(1)
+# Counter for input prompts
+const PROMPT_COUNT = Ref(1)
 
-# Counter for Mojo input prompts
-const MOJO_COUNT = Ref(1)
+# Helper function to configure on_done with counter increment
+function configure_counting_on_done(main_mode)
+    old_on_done = ORIGINAL_SETTINGS[:on_done]
+    main_mode.on_done = (s, buf, ok) -> begin
+        result = old_on_done(s, buf, ok)
+        PROMPT_COUNT[] += 1
+        return result
+    end
+end
 
 # Function to process banner templates
 function process_banner_template(template::String)
@@ -152,12 +159,16 @@ function save_or_restore_original_settings!(repl)
     end
 end
 
-function enable_python_repl(repl)
+# Helper function to ensure REPL interface exists
+function ensure_repl_interface(repl)
     if !isdefined(repl, :interface)
-        interface = repl.interface = REPL.setup_interface(repl)
-    else
-        interface = repl.interface
+        repl.interface = REPL.setup_interface(repl)
     end
+    return repl.interface
+end
+
+function enable_python_repl(repl)
+    interface = ensure_repl_interface(repl)
     save_or_restore_original_settings!(repl)  # Save if empty, restore if not
 
     main_mode = interface.modes[1]
@@ -167,48 +178,33 @@ function enable_python_repl(repl)
 end
 
 function enable_ipython_repl(repl)
-    if !isdefined(repl, :interface)
-        interface = repl.interface = REPL.setup_interface(repl)
-    else
-        interface = repl.interface
-    end
+    interface = ensure_repl_interface(repl)
     save_or_restore_original_settings!(repl)  # Save if empty, restore if not
 
     main_mode = interface.modes[1]
 
     # Set up prompt function that increments counter
-    main_mode.prompt = () -> "In [$(IPYTHON_COUNT[])]: "
+    main_mode.prompt = () -> "In [$(PROMPT_COUNT[])]: "
     main_mode.prompt_prefix = ""
     main_mode.prompt_suffix = ""
 
     # Configure output prefix to match IPython style
-    main_mode.output_prefix = "Out[$(IPYTHON_COUNT[])]: "
+    main_mode.output_prefix = "Out[$(PROMPT_COUNT[])]: "
     main_mode.output_prefix_prefix = ""
     main_mode.output_prefix_suffix = ""
 
-    # Hook into on_done to increment counter after each input
-    old_on_done = ORIGINAL_SETTINGS[:on_done]  # Use saved original on_done
-    main_mode.on_done = (s, buf, ok) -> begin
-        result = old_on_done(s, buf, ok)
-        IPYTHON_COUNT[] += 1
-        return result
-    end
+    configure_counting_on_done(main_mode)
 end
 
 function enable_julia_repl(repl)
     if !isempty(ORIGINAL_SETTINGS) && isdefined(repl, :interface)
         save_or_restore_original_settings!(repl)  # Will restore since ORIGINAL_SETTINGS is not empty
-        IPYTHON_COUNT[] = 1  # Reset IPython counter
-        MOJO_COUNT[] = 1  # Reset Mojo counter
+        PROMPT_COUNT[] = 1  # Reset prompt counter
     end
 end
 
 function enable_r_repl(repl)
-    if !isdefined(repl, :interface)
-        interface = repl.interface = REPL.setup_interface(repl)
-    else
-        interface = repl.interface
-    end
+    interface = ensure_repl_interface(repl)
     save_or_restore_original_settings!(repl)  # Save if empty, restore if not
 
     main_mode = interface.modes[1]
@@ -221,25 +217,15 @@ function enable_r_repl(repl)
 end
 
 function enable_mojo_repl(repl)
-    if !isdefined(repl, :interface)
-        interface = repl.interface = REPL.setup_interface(repl)
-    else
-        interface = repl.interface
-    end
+    interface = ensure_repl_interface(repl)
     save_or_restore_original_settings!(repl)  # Save if empty, restore if not
 
     main_mode = interface.modes[1]
-    main_mode.prompt = () -> "$(MOJO_COUNT[])> "
+    main_mode.prompt = () -> "$(PROMPT_COUNT[])> "
     main_mode.prompt_prefix = ""
     main_mode.prompt_suffix = ""
 
-    # Hook into on_done to increment counter after each input
-    old_on_done = ORIGINAL_SETTINGS[:on_done]  # Use saved original on_done
-    main_mode.on_done = (s, buf, ok) -> begin
-        result = old_on_done(s, buf, ok)
-        MOJO_COUNT[] += 1
-        return result
-    end
+    configure_counting_on_done(main_mode)
 end
 
 function apply_repl_config(config_fn::Function)
@@ -255,23 +241,21 @@ function apply_repl_config(config_fn::Function)
     nothing
 end
 
-function enable_python()
-    # Override banner function in the correct module depending on Julia version
+# Helper function to override banner
+function override_banner(banner_fn::Function)
     mod = isdefined(Base, :banner) ? Base : REPL
     @eval function $mod.banner(io::IO=stdout; short::Bool=false)
-        $python_banner(io)
+        $banner_fn(io)
     end
+end
 
+function enable_python()
+    override_banner(python_banner)
     apply_repl_config(enable_python_repl)
 end
 
 function enable_ipython()
-    # Override banner function in the correct module depending on Julia version
-    mod = isdefined(Base, :banner) ? Base : REPL
-    @eval function $mod.banner(io::IO=stdout; short::Bool=false)
-        $ipython_banner(io)
-    end
-
+    override_banner(ipython_banner)
     apply_repl_config(enable_ipython_repl)
 end
 
@@ -280,22 +264,12 @@ function enable_julia()
 end
 
 function enable_r()
-    # Override banner function in the correct module depending on Julia version
-    mod = isdefined(Base, :banner) ? Base : REPL
-    @eval function $mod.banner(io::IO=stdout; short::Bool=false)
-        $r_banner(io)
-    end
-
+    override_banner(r_banner)
     apply_repl_config(enable_r_repl)
 end
 
 function enable_mojo()
-    # Override banner function in the correct module depending on Julia version
-    mod = isdefined(Base, :banner) ? Base : REPL
-    @eval function $mod.banner(io::IO=stdout; short::Bool=false)
-        $mojo_banner(io)
-    end
-
+    override_banner(mojo_banner)
     apply_repl_config(enable_mojo_repl)
 end
 
