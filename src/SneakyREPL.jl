@@ -185,13 +185,13 @@ function enable_ipython_repl(repl)
 
     # Set up prompt function that increments counter
     main_mode.prompt = () -> "In [$(PROMPT_COUNT[])]: "
-    main_mode.prompt_prefix = ""
-    main_mode.prompt_suffix = ""
+    main_mode.prompt_prefix = repl.hascolor ? "\e[32m" : ""
+    main_mode.prompt_suffix = repl.hascolor ? "\e[0m" : ""
 
     # Configure output prefix to match IPython style
     main_mode.output_prefix = "Out[$(PROMPT_COUNT[])]: "
-    main_mode.output_prefix_prefix = ""
-    main_mode.output_prefix_suffix = ""
+    main_mode.output_prefix_prefix = repl.hascolor ? "\e[31m" : ""
+    main_mode.output_prefix_suffix = repl.hascolor ? "\e[0m" : ""
 
     configure_counting_on_done(main_mode)
 end
