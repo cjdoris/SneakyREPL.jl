@@ -59,59 +59,19 @@ using Preferences
 
 ## Preferences
 
-You can customize various aspects of SneakyREPL using Julia's Preferences system. Set these in your Julia startup file (`~/.julia/config/startup.jl`):
+You can customize various aspects of SneakyREPL using Julia's preferences system. The recommended way is to use [PreferenceTools.jl](https://github.com/cjdoris/PreferenceTools.jl) for a more user-friendly experience. Press `]` to enter the Pkg mode and then:
 
-```julia
-using Preferences
+```julia-repl
+pkg> add PreferenceTools SneakyREPL
 
-# Set preferred REPL mode
-@set_preferences!("mode" => "python")  # or "julia", "ipython", "r", or "mojo"
+julia> using PreferenceTools
 
-# Customize version numbers shown in banners
-@set_preferences!("python_version" => "3.13.1")
-@set_preferences!("ipython_version" => "8.32.0")
-@set_preferences!("r_version" => "4.4.2")
-@set_preferences!("r_version_name" => "Beagle Scouts")
-@set_preferences!("mojo_version" => "24.6")
+pkg> preference add SneakyREPL mode=python  # or "julia", "ipython", "r", or "mojo"
 
-# Customize entire banners
-@set_preferences!("python_banner" => """
-Python {PYTHON_VERSION} (Julia {JULIA_VERSION})
-Type "help", "copyright", "credits" or "license" for more information.
-""")
-
-@set_preferences!("ipython_banner" => """
-Python {PYTHON_VERSION} (Julia {JULIA_VERSION})
-Type "copyright", "credits" or "license" for more information.
-IPython {IPYTHON_VERSION} -- An enhanced Interactive Python. Type '?' for help.
-""")
-
-@set_preferences!("r_banner" => """
-R version {R_VERSION} (Julia {JULIA_VERSION}) -- "{R_VERSION_NAME}"
-Copyright (C) 2023 The R Foundation for Statistical Computing
-Platform: {MACHINE} ({WORD_SIZE}-bit)
-
-R is free software and comes with ABSOLUTELY NO WARRANTY.
-You are welcome to redistribute it under certain conditions.
-Type 'license()' or 'licence()' for distribution details.
-
-Natural language support but running in an English locale
-
-R is a collaborative project with many contributors.
-Type 'contributors()' for more information and
-'citation()' on how to cite R or R packages in publications.
-
-Type 'demo()' for some demos, 'help()' for on-line help, or
-'help.start()' for an HTML browser interface to help.
-Type 'q()' to quit R.
-""")
-
-@set_preferences!("mojo_banner" => """
-Welcome to Mojo! 🔥 (Julia {JULIA_VERSION})
-Expressions are delimited by a blank line.
-Type `:mojo help` for further assistance.
-""")
+pkg> preference add SneakyREPL python_version=3.13.1
 ```
+
+Alternatively, you can use Preferences.jl directly.
 
 The following placeholders are available in banner templates:
 - `{JULIA_VERSION}`: Current Julia version
@@ -124,9 +84,16 @@ The following placeholders are available in banner templates:
 - `{MOJO_VERSION}`: Mojo version (from preference or default)
 
 Default values:
-- `mode`: "julia"
-- `python_version`: "3.13.1"
-- `ipython_version`: "8.32.0"
-- `r_version`: "4.4.2"
-- `r_version_name`: "Beagle Scouts"
-- `mojo_version`: "24.6"
+
+| Preference | Description | Default Value |
+|------------|-------------|---------------|
+| `mode` | The REPL mode to use | `"julia"` |
+| `python_version` | Python version shown in banner | `"3.13.1"` |
+| `ipython_version` | IPython version shown in banner | `"8.32.0"` |
+| `r_version` | R version shown in banner | `"4.4.2"` |
+| `r_version_name` | R version name shown in banner | `"Beagle Scouts"` |
+| `mojo_version` | Mojo version shown in banner | `"24.6"` |
+| `python_banner` | Custom banner template for Python mode | *(see below)* |
+| `ipython_banner` | Custom banner template for IPython mode | *(see below)* |
+| `r_banner` | Custom banner template for R mode | *(see below)* |
+| `mojo_banner` | Custom banner template for Mojo mode | *(see below)* |
