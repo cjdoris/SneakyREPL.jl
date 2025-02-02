@@ -167,6 +167,22 @@ function ensure_repl_interface(repl)
     return repl.interface
 end
 
+# Helper function to configure output prompts
+function configure_output_prompts(main_mode, output_prefix, output_prefix_prefix="", output_prefix_suffix="")
+    # Set REPL mode output settings
+    main_mode.output_prefix = output_prefix
+    main_mode.output_prefix_prefix = output_prefix_prefix
+    main_mode.output_prefix_suffix = output_prefix_suffix
+
+    # Check if OhMyREPL is loaded and set its output prompt variables
+    ohmyrepl_pkgid = Base.PkgId(Base.UUID("5fb14364-9ced-5910-84b2-373655c76a03"), "OhMyREPL")
+    if haskey(Base.loaded_modules, ohmyrepl_pkgid)
+        OhMyREPL = Base.loaded_modules[ohmyrepl_pkgid]
+        OhMyREPL.OUTPUT_PROMPT = output_prefix
+        OhMyREPL.OUTPUT_PROMPT_PREFIX = output_prefix_prefix
+    end
+end
+
 function enable_python_repl(repl)
     interface = ensure_repl_interface(repl)
     save_or_restore_original_settings!(repl)  # Save if empty, restore if not
@@ -175,6 +191,7 @@ function enable_python_repl(repl)
     main_mode.prompt = ">>> "
     main_mode.prompt_prefix = ""
     main_mode.prompt_suffix = ""
+    configure_output_prompts(main_mode, "")  # Python doesn't have output prompts
 end
 
 function enable_ipython_repl(repl)
@@ -189,9 +206,12 @@ function enable_ipython_repl(repl)
     main_mode.prompt_suffix = repl.hascolor ? "\e[0m" : ""
 
     # Configure output prefix to match IPython style
-    main_mode.output_prefix = "Out[$(PROMPT_COUNT[])]: "
-    main_mode.output_prefix_prefix = repl.hascolor ? "\e[31m" : ""
-    main_mode.output_prefix_suffix = repl.hascolor ? "\e[0m" : ""
+    configure_output_prompts(
+        main_mode,
+        () -> "Out[$(PROMPT_COUNT[])]: ",
+        repl.hascolor ? "\e[31m" : "",
+        repl.hascolor ? "\e[0m" : ""
+    )
 
     configure_counting_on_done(main_mode)
 end
@@ -211,9 +231,7 @@ function enable_r_repl(repl)
     main_mode.prompt = "> "
     main_mode.prompt_prefix = ""
     main_mode.prompt_suffix = ""
-    main_mode.output_prefix = "[1] "
-    main_mode.output_prefix_prefix = ""
-    main_mode.output_prefix_suffix = ""
+    configure_output_prompts(main_mode, "[1] ")
 end
 
 function enable_mojo_repl(repl)
@@ -224,6 +242,7 @@ function enable_mojo_repl(repl)
     main_mode.prompt = () -> "$(PROMPT_COUNT[])> "
     main_mode.prompt_prefix = ""
     main_mode.prompt_suffix = ""
+    configure_output_prompts(main_mode, "")  # Mojo doesn't have output prompts
 
     configure_counting_on_done(main_mode)
 end
