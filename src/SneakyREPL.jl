@@ -183,14 +183,19 @@ function configure_output_prompts(main_mode, output_prefix, output_prefix_prefix
     end
 end
 
+# Helper function to configure input prompts
+function configure_input_prompts(main_mode, prompt, prompt_prefix="", prompt_suffix="")
+    main_mode.prompt = prompt
+    main_mode.prompt_prefix = prompt_prefix
+    main_mode.prompt_suffix = prompt_suffix
+end
+
 function enable_python_repl(repl)
     interface = ensure_repl_interface(repl)
     save_or_restore_original_settings!(repl)  # Save if empty, restore if not
 
     main_mode = interface.modes[1]
-    main_mode.prompt = ">>> "
-    main_mode.prompt_prefix = ""
-    main_mode.prompt_suffix = ""
+    configure_input_prompts(main_mode, ">>> ")
     configure_output_prompts(main_mode, "")  # Python doesn't have output prompts
 end
 
@@ -201,9 +206,12 @@ function enable_ipython_repl(repl)
     main_mode = interface.modes[1]
 
     # Set up prompt function that increments counter
-    main_mode.prompt = () -> "In [$(PROMPT_COUNT[])]: "
-    main_mode.prompt_prefix = repl.hascolor ? "\e[32m" : ""
-    main_mode.prompt_suffix = repl.hascolor ? "\e[0m" : ""
+    configure_input_prompts(
+        main_mode,
+        () -> "In [$(PROMPT_COUNT[])]: ",
+        repl.hascolor ? "\e[32m" : "",
+        repl.hascolor ? "\e[0m" : ""
+    )
 
     # Configure output prefix to match IPython style
     configure_output_prompts(
@@ -228,9 +236,7 @@ function enable_r_repl(repl)
     save_or_restore_original_settings!(repl)  # Save if empty, restore if not
 
     main_mode = interface.modes[1]
-    main_mode.prompt = "> "
-    main_mode.prompt_prefix = ""
-    main_mode.prompt_suffix = ""
+    configure_input_prompts(main_mode, "> ")
     configure_output_prompts(main_mode, "[1] ")
 end
 
@@ -239,9 +245,7 @@ function enable_mojo_repl(repl)
     save_or_restore_original_settings!(repl)  # Save if empty, restore if not
 
     main_mode = interface.modes[1]
-    main_mode.prompt = () -> "$(PROMPT_COUNT[])> "
-    main_mode.prompt_prefix = ""
-    main_mode.prompt_suffix = ""
+    configure_input_prompts(main_mode, () -> "$(PROMPT_COUNT[])> ")
     configure_output_prompts(main_mode, "")  # Mojo doesn't have output prompts
 
     configure_counting_on_done(main_mode)
